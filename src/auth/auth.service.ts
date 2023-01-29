@@ -25,18 +25,36 @@ export class AuthService {
 
       // return the saved user
       return user;
-  } catch(error) {
-    if (error instanceof PrismaClientKnownRequestError) {
-      const unique_contraint_failed = 'P2002';
-      if (error.code === unique_contraint_failed) {
-        throw new ForbiddenException('Credentials taken')
+    } catch(error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        const unique_contraint_failed = 'P2002';
+        if (error.code === unique_contraint_failed) {
+          throw new ForbiddenException('Credentials taken')
+        }
       }
+      throw error;
     }
-    throw error;
-  }
   }
 
-  signin() {
+  async signin(dto: AuthDto) {
+    // find user by email
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email,
+      }
+    });
+    // if user does not exist, throw exception
+    if (!user) throw new ForbiddenException('Credentials incorrect');
+
+    // compare passwords
+    const pwMatches = await argon.verify(user.hash, dto.password);
+
+    // if password incorrect, throw an exception
+    if (!pwMatches) throw new ForbiddenException('Credentials incorrect');
+    
+    // return user
+    delete user.hash;
+    return user;
     return { msg: 'I have signed in'};
   }
 
