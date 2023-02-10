@@ -3,7 +3,8 @@ import * as pactum from 'pactum';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AppModule } from '../src/app.module';
-import { AuthDto } from 'src/auth/dto';
+import { AuthDto } from '../src/auth/dto';
+import { UpdateUserDto } from '../src/user/dto';
 
 
 describe('App e2e', () => {
@@ -110,7 +111,24 @@ describe('App e2e', () => {
           .expectStatus(200);
       });
     });
-    describe('Edit User', () => {});
+    describe('Edit user', () => {
+      it('should edit user', () => {
+        const dto: UpdateUserDto = {
+          firstName: 'test',
+          email: 'test@gmail.com',
+        };
+        return pactum
+          .spec()
+          .patch('/users')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .withBody(dto)
+          .expectStatus(200)
+          .expectBodyContains(dto.firstName)
+          .expectBodyContains(dto.email);
+      });
+    });
   });
 
   describe('Bookmarks', () => {    
